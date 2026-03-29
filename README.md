@@ -132,6 +132,21 @@ npm install -g @anthropic-fans/tmux-bridge
 
 That's it. Your agent now has 9 MCP tools for reading, typing, and messaging across tmux panes.
 
+## Updating
+
+```bash
+# If installed globally
+npm update -g @anthropic-fans/tmux-bridge
+
+# If using npx (auto-updates, but to force latest)
+npx @anthropic-fans/tmux-bridge@latest
+
+# Check your current version
+npx @anthropic-fans/tmux-bridge --version
+```
+
+After updating, restart your agents to pick up the new version. If you use `npx` in your MCP config, it caches the package — run `npx --yes @anthropic-fans/tmux-bridge@latest` once to pull the latest, then your agents will use it on next startup.
+
 ## How It Works
 
 ![Layered Architecture](docs/images/layered-architecture.png)
