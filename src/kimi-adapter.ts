@@ -322,7 +322,6 @@ Usage:
 
 Environment:
   KIMI_PATH          Path to kimi binary (default: kimi)
-  TMUX_BRIDGE_PATH   Path to tmux-bridge binary (default: tmux-bridge)
 
 Examples:
   kimi-tmux "list all tmux panes"

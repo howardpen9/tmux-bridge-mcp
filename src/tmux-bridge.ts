@@ -5,7 +5,7 @@
  */
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
-import { existsSync, writeFileSync, unlinkSync } from "node:fs";
+import { existsSync, mkdirSync, writeFileSync, unlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -23,7 +23,6 @@ function guardPath(paneId: string): string {
 function markRead(paneId: string): void {
   try {
     if (!existsSync(readGuardDir)) {
-      const { mkdirSync } = require("node:fs");
       mkdirSync(readGuardDir, { recursive: true });
     }
     writeFileSync(guardPath(paneId), "", { flag: "w" });
@@ -161,7 +160,7 @@ export async function list(): Promise<PaneInfo[]> {
     .map((line) => {
       const [target, sessionWindow, size, cmd, label, cwd] =
         line.split("|");
-      const home = globalThis.process?.env?.HOME || "";
+      const home = process.env.HOME || "";
       return {
         target,
         sessionWindow,
@@ -270,6 +269,7 @@ export async function id(): Promise<string> {
 
 export async function doctor(): Promise<string> {
   const lines: string[] = ["tmux-bridge doctor", "---"];
+  let hasErrors = false;
 
   lines.push(`TMUX_PANE:          ${process.env.TMUX_PANE || "<unset>"}`);
   lines.push(`TMUX:               ${process.env.TMUX || "<unset>"}`);
@@ -296,6 +296,7 @@ export async function doctor(): Promise<string> {
       `Socket:             ${socketArgs.length ? socketArgs[1] : "(default)"}`
     );
   } catch (e) {
+    hasErrors = true;
     lines.push(`Socket:             FAILED — ${(e as Error).message}`);
   }
 
@@ -312,6 +313,7 @@ export async function doctor(): Promise<string> {
       .filter((l) => l.trim()).length;
     lines.push(`Labeled panes:      ${labeledCount}`);
   } catch {
+    hasErrors = true;
     lines.push(`Panes:              unable to list`);
   }
 
@@ -322,11 +324,12 @@ export async function doctor(): Promise<string> {
       await tmux("display-message", "-t", pane, "-p", "#{pane_id}");
       lines.push(`This pane (${pane}):  visible to server`);
     } catch {
+      hasErrors = true;
       lines.push(`This pane (${pane}):  NOT visible to server`);
     }
   }
 
   lines.push("---");
-  lines.push("Status: OK");
+  lines.push(hasErrors ? "Status: DEGRADED — some checks failed" : "Status: OK");
   return lines.join("\n");
 }
