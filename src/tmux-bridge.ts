@@ -267,6 +267,34 @@ export async function id(): Promise<string> {
   return pane;
 }
 
+// --- Sensible Defaults ---
+// Applied at startup so tmux feels like a normal terminal out of the box.
+// Uses runtime set-option (no file writes), safe to call multiple times.
+
+export async function applyDefaults(): Promise<string[]> {
+  const applied: string[] = [];
+
+  const defaults: Array<[string[], string]> = [
+    // Mouse scroll, click, and drag — feels like a normal terminal
+    [["set-option", "-g", "mouse", "on"], "mouse on"],
+    // Long scrollback so conversation history isn't lost
+    [["set-option", "-g", "history-limit", "100000"], "history-limit 100000"],
+    // Vi keys in copy mode for efficient scrolling (k/j, Ctrl-u/d, g/G)
+    [["set-option", "-g", "mode-keys", "vi"], "mode-keys vi"],
+  ];
+
+  for (const [args, label] of defaults) {
+    try {
+      await tmux(...args);
+      applied.push(label);
+    } catch {
+      // Non-fatal — keep going
+    }
+  }
+
+  return applied;
+}
+
 export async function doctor(): Promise<string> {
   const lines: string[] = ["tmux-bridge doctor", "---"];
   let hasErrors = false;
@@ -327,6 +355,19 @@ export async function doctor(): Promise<string> {
       hasErrors = true;
       lines.push(`This pane (${pane}):  NOT visible to server`);
     }
+  }
+
+  // Show applied defaults
+  lines.push("---");
+  try {
+    const mouse = (await tmuxNoFail("show-option", "-gv", "mouse")).trim();
+    const histLimit = (await tmuxNoFail("show-option", "-gv", "history-limit")).trim();
+    const modeKeys = (await tmuxNoFail("show-option", "-gv", "mode-keys")).trim();
+    lines.push(`mouse:              ${mouse || "?"}`);
+    lines.push(`history-limit:      ${histLimit || "?"}`);
+    lines.push(`mode-keys:          ${modeKeys || "?"}`);
+  } catch {
+    lines.push(`Defaults:           unable to query`);
   }
 
   lines.push("---");

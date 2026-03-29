@@ -182,6 +182,10 @@ server.tool(
 // --- Start ---
 
 async function main() {
+  // Apply sensible tmux defaults (mouse scroll, long history, vi keys)
+  // so users don't need to configure ~/.tmux.conf manually.
+  bridge.applyDefaults().catch(() => {});
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
 }

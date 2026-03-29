@@ -340,6 +340,9 @@ Examples:
     prompt = args.join(" ");
   }
 
+  // Apply sensible tmux defaults before starting
+  bridge.applyDefaults().catch(() => {});
+
   await runKimiWithToolLoop(prompt, maxRounds);
 }
 
