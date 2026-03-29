@@ -2,7 +2,7 @@
 
 [English](README.md) | **简体中文**
 
-为 [smux](https://github.com/ShawnPana/smux) 跨面板 Agent 通信提供 MCP 服务器 + CLI 适配器。
+独立的 MCP 服务器 + CLI 适配器，通过 tmux 实现跨面板 AI Agent 通信。除 `tmux` 本身外无任何外部依赖。
 
 - **MCP Agent** — Gemini CLI、Claude Code 或任何 MCP 客户端，通过结构化 tool call 操作 tmux 面板
 - **非 MCP Agent** — `kimi-tmux` 封装 Kimi CLI，自动解析 tool call 并支持多轮对话
@@ -20,11 +20,9 @@ kimi-tmux "让 codex 面板 review src/auth.ts"
 
 ## 前置条件
 
-先安装 [smux](https://github.com/ShawnPana/smux)：
-
-```bash
-curl -fsSL https://shawnpana.com/smux/install.sh | bash
-```
+- **tmux 3.2+** — 唯一的运行时依赖
+  - macOS: `brew install tmux`
+  - Linux: `apt install tmux` / `dnf install tmux`
 
 ## 安装
 
@@ -95,7 +93,7 @@ kimi-tmux --rounds 3 "给 gemini 发消息并等结果"
 
 工作原理：
 
-1. 将 `system-instruction/smux-skill.md` 注入为 system prompt
+1. 将 system instruction 注入为 system prompt
 2. 以 `--print` 非交互模式运行 Kimi
 3. 解析输出中的 ` ```tool``` ` 代码块（支持 JSON 和函数调用格式）
 4. 通过 `tmux-bridge` CLI 执行命令
@@ -116,15 +114,6 @@ kimi-tmux --rounds 3 "给 gemini 发消息并等结果"
 | - | **STOP** | 不要轮询回复，对方 Agent 会直接回复到你的面板 |
 
 ## Agent 协作示例
-
-### Claude Code ↔ Codex（通过 smux skill）
-
-```bash
-tmux-bridge read codex 20
-tmux-bridge message codex "Review src/auth.ts for security issues"
-tmux-bridge read codex 20
-tmux-bridge keys codex Enter
-```
 
 ### Gemini ↔ Claude Code（通过 MCP 服务器）
 
@@ -178,9 +167,13 @@ kimi-tmux "告诉 claude 面板跑一下测试套件"
 - Agent 间心跳检测
 - Agent 能力广播
 
-## 致谢
+## 相关项目
 
-基于 [smux](https://github.com/ShawnPana/smux)（[@ShawnPana](https://github.com/ShawnPana)）构建。
+| 项目 | 方式 | 重点 |
+|------|------|------|
+| [smux](https://github.com/ShawnPana/smux) | tmux skill + bash CLI | Agent 通用的 tmux 配置 |
+| [agent-bridge](https://github.com/raysonmeng/agent-bridge) | WebSocket daemon + MCP 插件 | Claude Code ↔ Codex |
+| **tmux-bridge**（本项目） | 独立 MCP 服务器 + 直接 tmux | 任何 Agent，零依赖 |
 
 ## 许可证
 

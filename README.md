@@ -2,7 +2,7 @@
 
 **English** | [简体中文](README.zh-CN.md)
 
-MCP server + CLI adapters for [smux](https://github.com/ShawnPana/smux) cross-pane agent communication.
+Standalone MCP server + CLI adapters for cross-pane AI agent communication via tmux. No external dependencies beyond `tmux` itself.
 
 - **For MCP agents** — Gemini CLI, Claude Code, or any MCP client gets structured tool calls with built-in read guards
 - **For non-MCP agents** — `kimi-tmux` wraps Kimi CLI with auto tool-call parsing and multi-turn support
@@ -20,11 +20,9 @@ kimi-tmux "ask the codex pane to review src/auth.ts"
 
 ## Prerequisites
 
-Install [smux](https://github.com/ShawnPana/smux) first:
-
-```bash
-curl -fsSL https://shawnpana.com/smux/install.sh | bash
-```
+- **tmux 3.2+** — the only runtime dependency
+  - macOS: `brew install tmux`
+  - Linux: `apt install tmux` / `dnf install tmux`
 
 ## Install
 
@@ -95,26 +93,15 @@ kimi-tmux --rounds 3 "send a message to gemini and wait for the result"
 
 How it works:
 
-1. Injects `system-instruction/smux-skill.md` as system prompt
+1. Injects system instruction as system prompt
 2. Runs Kimi in `--print` non-interactive mode
 3. Parses ` ```tool``` ` blocks from output (JSON or function-call style)
-4. Executes them via `tmux-bridge` CLI
+4. Executes them directly via tmux commands
 5. Feeds results back with full transcript (up to 5 rounds)
 
 ![Read-Act-Read Workflow](docs/images/read-act-read.png)
 
 ## Agent Collaboration
-
-### Claude Code ↔ Codex (via smux skill)
-
-Both use `tmux-bridge` directly as bash commands:
-
-```bash
-tmux-bridge read codex 20
-tmux-bridge message codex "Review src/auth.ts for security issues"
-tmux-bridge read codex 20
-tmux-bridge keys codex Enter
-```
 
 ### Gemini ↔ Claude Code (via MCP server)
 
@@ -141,13 +128,13 @@ kimi-tmux "tell the claude pane to run the test suite"
 │                                                           │
 │ ┌────────────┐ ┌────────────┐ ┌──────────┐ ┌───────────┐ │
 │ │ Claude Code │ │   Codex    │ │ Gemini   │ │   Kimi    │ │
-│ │  (skill)   │ │  (skill)   │ │  (MCP)   │ │ (kimi-tmux)│ │
+│ │  (MCP)     │ │  (MCP)     │ │  (MCP)   │ │(kimi-tmux)│ │
 │ │            │ │            │ │          │ │           │ │
 │ │ label:     │ │ label:     │ │ label:   │ │ label:    │ │
 │ │ claude     │ │ codex      │ │ gemini   │ │ kimi      │ │
 │ └─────┬──────┘ └─────┬──────┘ └────┬─────┘ └─────┬─────┘ │
 │       └──────────────┴─────────────┴─────────────┘       │
-│                tmux-bridge (cross-pane IPC)                │
+│           tmux-bridge (direct tmux IPC, no deps)          │
 └───────────────────────────────────────────────────────────┘
 ```
 
@@ -155,17 +142,19 @@ kimi-tmux "tell the claude pane to run the test suite"
 
 ```
 MCP path (Gemini, Claude Code, any MCP client):
-┌─────────────┐  MCP/stdio  ┌──────────────┐   bash   ┌─────────────┐
-│  MCP Agent   │◄───────────►│  tmux-bridge  │◄────────►│    smux      │
-└─────────────┘             │  MCP server   │          │  tmux panes  │
-                            └──────────────┘          └─────────────┘
+┌─────────────┐  MCP/stdio  ┌──────────────┐  tmux API  ┌─────────────┐
+│  MCP Agent   │◄───────────►│  tmux-bridge  │◄──────────►│  tmux panes  │
+└─────────────┘             │  MCP server   │            └─────────────┘
+                            └──────────────┘
 
 CLI path (Kimi):
-┌─────────────┐  --print    ┌──────────────┐   bash   ┌─────────────┐
-│  Kimi CLI    │◄───────────►│  kimi-tmux    │◄────────►│  tmux-bridge │
-└─────────────┘  tool parse │  adapter      │          │  CLI         │
-                            └──────────────┘          └─────────────┘
+┌─────────────┐  --print    ┌──────────────┐  tmux API  ┌─────────────┐
+│  Kimi CLI    │◄───────────►│  kimi-tmux    │◄──────────►│  tmux panes  │
+└─────────────┘  tool parse │  adapter      │            └─────────────┘
+                            └──────────────┘
 ```
+
+No intermediate CLI layer — tmux-bridge talks directly to `tmux` via `capture-pane`, `send-keys`, `list-panes`, etc.
 
 ## System Instruction
 
@@ -173,21 +162,22 @@ For agents that support custom system prompts, copy `system-instruction/smux-ski
 
 1. **Read before act** — always read a pane before typing or sending keys
 2. **Read-Act-Read cycle** — type, verify, then press Enter
-3. **Never poll** — other agents reply directly into your pane via tmux-bridge
+3. **Never poll** — other agents reply directly into your pane
 4. **Label early** — use `tmux_name` for human-readable pane addressing
 
 ## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `TMUX_BRIDGE_PATH` | Path to `tmux-bridge` binary | `tmux-bridge` (in PATH) |
+| `TMUX_BRIDGE_SOCKET` | Override tmux server socket path | Auto-detected from `$TMUX` |
 | `KIMI_PATH` | Path to `kimi` binary (kimi-tmux only) | `kimi` (in PATH) |
 
 ## Roadmap
 
 ### v0.1 (current)
-- MCP server with 9 tools wrapping all `tmux-bridge` commands
+- Standalone MCP server — direct tmux interaction, no external CLI deps
 - `kimi-tmux` CLI adapter with multi-turn tool loop and full transcript
+- Read guard enforcement at the MCP layer
 - System instruction for any agent
 
 ### v0.2
@@ -195,9 +185,13 @@ For agents that support custom system prompts, copy `system-instruction/smux-ski
 - Health check / heartbeat between agents
 - Agent capability advertisement
 
-## Credits
+## Related Projects
 
-Built on top of [smux](https://github.com/ShawnPana/smux) by [@ShawnPana](https://github.com/ShawnPana).
+| Project | Approach | Focus |
+|---------|----------|-------|
+| [smux](https://github.com/ShawnPana/smux) | tmux skill + bash CLI | Agent-agnostic tmux setup |
+| [agent-bridge](https://github.com/raysonmeng/agent-bridge) | WebSocket daemon + MCP plugin | Claude Code ↔ Codex |
+| **tmux-bridge** (this) | Standalone MCP server + direct tmux | Any agent, zero deps |
 
 ## License
 

@@ -14,11 +14,11 @@ import { promisify } from "node:util";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import * as bridge from "./tmux-bridge.js";
 
 const execFileAsync = promisify(execFile);
 
 const KIMI_BIN = process.env.KIMI_PATH || "kimi";
-const TMUX_BRIDGE_BIN = process.env.TMUX_BRIDGE_PATH || "tmux-bridge";
 
 // Match ``` tool blocks — each block can contain multiple calls (one per line)
 const TOOL_BLOCK_RE = /```tool\s*\n([\s\S]*?)```/g;
@@ -147,50 +147,38 @@ function parseFuncArgs(argsStr: string): Record<string, string | number | string
 
 async function executeToolCall(call: ToolCall): Promise<string> {
   const { name, args } = call;
-  const cmdArgs: string[] = [];
-
-  switch (name) {
-    case "tmux_list":
-      cmdArgs.push("list");
-      break;
-    case "tmux_read":
-      cmdArgs.push("read", String(args.target));
-      if (args.lines) cmdArgs.push(String(args.lines));
-      break;
-    case "tmux_type":
-      cmdArgs.push("type", String(args.target), String(args.text));
-      break;
-    case "tmux_message":
-      cmdArgs.push("message", String(args.target), String(args.text));
-      break;
-    case "tmux_keys":
-      cmdArgs.push("keys", String(args.target));
-      if (Array.isArray(args.keys)) {
-        cmdArgs.push(...args.keys.map(String));
-      }
-      break;
-    case "tmux_name":
-      cmdArgs.push("name", String(args.target), String(args.label));
-      break;
-    case "tmux_resolve":
-      cmdArgs.push("resolve", String(args.label));
-      break;
-    case "tmux_id":
-      cmdArgs.push("id");
-      break;
-    case "tmux_doctor":
-      cmdArgs.push("doctor");
-      break;
-    default:
-      return `Error: unknown tool "${name}"`;
-  }
 
   try {
-    const { stdout, stderr } = await execFileAsync(TMUX_BRIDGE_BIN, cmdArgs, {
-      timeout: 10_000,
-      env: { ...process.env },
-    });
-    return stdout || stderr || "(no output)";
+    switch (name) {
+      case "tmux_list": {
+        const panes = await bridge.list();
+        return panes
+          .map((p) => `${p.target} | ${p.sessionWindow} | ${p.process} | label:${p.label || "(none)"} | ${p.cwd}`)
+          .join("\n") || "(no panes)";
+      }
+      case "tmux_read":
+        return await bridge.read(String(args.target), Number(args.lines) || 50);
+      case "tmux_type":
+        await bridge.type(String(args.target), String(args.text));
+        return `Typed into ${args.target}`;
+      case "tmux_message":
+        await bridge.message(String(args.target), String(args.text));
+        return `Message sent to ${args.target}`;
+      case "tmux_keys":
+        await bridge.keys(String(args.target), ...(Array.isArray(args.keys) ? args.keys.map(String) : []));
+        return `Sent keys to ${args.target}`;
+      case "tmux_name":
+        await bridge.name(String(args.target), String(args.label));
+        return `Labeled ${args.target} as "${args.label}"`;
+      case "tmux_resolve":
+        return await bridge.resolve(String(args.label));
+      case "tmux_id":
+        return await bridge.id();
+      case "tmux_doctor":
+        return await bridge.doctor();
+      default:
+        return `Error: unknown tool "${name}"`;
+    }
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     process.stderr.write(`Tool error [${name}]: ${msg}\n`);

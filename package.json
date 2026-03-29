@@ -1,7 +1,7 @@
 {
   "name": "@anthropic-fans/tmux-bridge",
   "version": "0.1.0",
-  "description": "MCP server and CLI adapters that bridge smux tmux-bridge to AI agents (Gemini, Kimi, Claude Code, Codex)",
+  "description": "Standalone MCP server + CLI adapters for cross-pane AI agent communication via tmux",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -19,7 +19,6 @@
     "tmux",
     "gemini",
     "kimi",
-    "smux",
     "agent",
     "bridge"
   ],
