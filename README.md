@@ -8,6 +8,8 @@ A standalone MCP server that lets AI agents (Claude Code, Gemini CLI, Codex, Kim
 
 [tmux](https://github.com/tmux/tmux) is a **terminal multiplexer** -- it lets you split one terminal window into multiple **panes**, each running its own process independently. Think of it as "tabs on steroids" for your terminal.
 
+![What is tmux](docs/images/what-is-tmux.png)
+
 ```
 +-------------------------------+
 |  Pane 1       |  Pane 2       |
@@ -25,7 +27,11 @@ Each pane is a full terminal. You can have Claude Code running in one, Codex in 
 
 **The problem:** these panes can't talk to each other. An agent in Pane 1 has no idea what's happening in Pane 2.
 
+![The Problem](docs/images/the-problem.png)
+
 **tmux-bridge fixes this.** It gives every agent the ability to read, type, and send messages into any other pane.
+
+![The Solution](docs/images/the-solution.png)
 
 ## What can you do with tmux-bridge?
 
@@ -42,6 +48,8 @@ Once installed, your AI agents can:
 All of this happens through standard MCP tool calls -- your agent doesn't need to learn any new syntax. If it supports MCP, it already knows how.
 
 ## Supported Agents
+
+![Supported Agents](docs/images/supported-agents.png)
 
 ### Tested and documented
 
@@ -125,6 +133,8 @@ npm install -g @anthropic-fans/tmux-bridge
 That's it. Your agent now has 9 MCP tools for reading, typing, and messaging across tmux panes.
 
 ## How It Works
+
+![Layered Architecture](docs/images/layered-architecture.png)
 
 tmux-bridge runs as an MCP server over stdio. It calls tmux directly (`capture-pane`, `send-keys`, `list-panes`, etc.) -- no intermediate CLI layer.
 

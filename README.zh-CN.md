@@ -8,6 +8,8 @@
 
 [tmux](https://github.com/tmux/tmux) 是一个**终端多路复用器** -- 它可以把一个终端窗口分成多个**面板**，每个面板独立运行自己的程序。可以理解为终端的"增强版分屏"。
 
+![什么是 tmux](docs/images/what-is-tmux.png)
+
 ```
 +-------------------------------+
 |  面板 1        |  面板 2       |
@@ -25,7 +27,11 @@
 
 **问题是：** 这些面板之间互相看不见。面板 1 的 agent 完全不知道面板 2 在发生什么。
 
+![问题](docs/images/the-problem.png)
+
 **tmux-bridge 就是解决这个问题的。** 它让每个 agent 都能读取、输入、发送消息到任意其他面板。
+
+![解决方案](docs/images/the-solution.png)
 
 ## tmux-bridge 能做什么？
 
@@ -42,6 +48,8 @@
 所有操作都是标准 MCP 工具调用 -- agent 不需要学新语法。只要它支持 MCP，就已经会用了。
 
 ## 支持的 Agent
+
+![支持的 Agent](docs/images/supported-agents.png)
 
 ### 已测试并提供文档
 
@@ -125,6 +133,8 @@ npm install -g @anthropic-fans/tmux-bridge
 完成。你的 Agent 现在有 9 个 MCP 工具，可以跨 tmux 面板读取、输入和发送消息。
 
 ## 工作原理
+
+![分层架构](docs/images/layered-architecture.png)
 
 tmux-bridge 作为 MCP 服务器通过 stdio 运行，直接调用 tmux（`capture-pane`、`send-keys`、`list-panes` 等），没有中间 CLI 层。
 
