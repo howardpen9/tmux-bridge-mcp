@@ -4,6 +4,70 @@
 
 独立的 MCP 服务器，让 AI Agent（Claude Code、Gemini CLI、Codex、Kimi CLI）通过 tmux 面板互相通信。直接调用 tmux，除 tmux 本身外无任何外部依赖。
 
+## tmux 是什么？
+
+[tmux](https://github.com/tmux/tmux) 是一个**终端多路复用器** -- 它可以把一个终端窗口分成多个**面板**，每个面板独立运行自己的程序。可以理解为终端的"增强版分屏"。
+
+```
++-------------------------------+
+|  面板 1        |  面板 2       |
+|  Claude Code   |  Codex       |
+|  写代码        |  做 review    |
+|                |              |
++----------------+--------------+
+|  面板 3        |  面板 4       |
+|  Gemini CLI    |  tail -f 日志 |
+|  做调研        |  监控         |
++-------------------------------+
+```
+
+每个面板都是一个完整的终端。你可以在一个面板里跑 Claude Code，另一个跑 Codex，第三个跑 Gemini -- 同时可见，同一台机器上。
+
+**问题是：** 这些面板之间互相看不见。面板 1 的 agent 完全不知道面板 2 在发生什么。
+
+**tmux-bridge 就是解决这个问题的。** 它让每个 agent 都能读取、输入、发送消息到任意其他面板。
+
+## tmux-bridge 能做什么？
+
+安装之后，你的 AI agent 可以：
+
+| 动作 | 工具 | 举例 |
+|------|------|------|
+| **查看另一个 agent 在做什么** | `tmux_read` | 读取 Codex 面板的最后 20 行 |
+| **给另一个 agent 派任务** | `tmux_message` + `tmux_keys` | 让 Claude review 一个文件 |
+| **编排多 agent 工作流** | 串联工具调用 | Gemini 调研 -> Claude 实现 -> Codex 审查 |
+| **监控进程** | 对 shell 面板 `tmux_read` | 看构建日志、测试输出、服务器状态 |
+| **按角色给面板命名** | `tmux_name` | 命名为 "claude"、"codex"、"gemini"，方便寻址 |
+
+所有操作都是标准 MCP 工具调用 -- agent 不需要学新语法。只要它支持 MCP，就已经会用了。
+
+## 支持的 Agent
+
+### 已测试并提供文档
+
+| Agent | 连接方式 | 状态 |
+|-------|----------|------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 原生 MCP (stdio) | 已支持 |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 原生 MCP (stdio) | 已支持 |
+| [Codex CLI](https://github.com/openai/codex) | 原生 MCP (stdio) | 已支持 |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | 原生 MCP (`kimi mcp add`) | 已支持 |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 旧版 | Legacy 封装器 (`kimi-tmux`) | 已支持 |
+
+### 理论兼容（任何支持 MCP 的 agent）
+
+| Agent | 备注 |
+|-------|------|
+| [Cursor](https://cursor.sh) | 设置中支持 MCP 服务器 |
+| [Windsurf (Codeium)](https://codeium.com/windsurf) | 支持 MCP 服务器 |
+| [Copilot CLI](https://githubnext.com/projects/copilot-cli) | 如果兼容 MCP |
+| [Aider](https://aider.chat) | 社区 MCP 支持 |
+| [Continue.dev](https://continue.dev) | 支持 MCP 服务器 |
+| [Cline](https://github.com/cline/cline) | VS Code 扩展，支持 MCP |
+| [Roo Code](https://github.com/RooVetGit/Roo-Code) | Cline 分支，支持 MCP |
+| 任何 shell 脚本或进程 | 用 `tmux_read` 读面板输出，无需 MCP |
+
+tmux-bridge 兼容**任何支持 stdio MCP 的 agent**。如果你的 agent 不在上面的列表中，试试添加 MCP 配置 -- 大概率直接能用。
+
 ## 为什么需要这个
 
 当你在多个终端里分别运行不同的 AI agent 时，它们各自独立工作。你不得不手动在它们之间复制粘贴上下文、转发问题和回答，或者干脆记不清每个 agent 在做什么。

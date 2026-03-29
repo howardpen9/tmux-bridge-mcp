@@ -4,6 +4,70 @@
 
 A standalone MCP server that lets AI agents (Claude Code, Gemini CLI, Codex, Kimi CLI) communicate with each other through tmux panes. It talks directly to tmux -- no external dependencies beyond tmux itself.
 
+## What is tmux?
+
+[tmux](https://github.com/tmux/tmux) is a **terminal multiplexer** -- it lets you split one terminal window into multiple **panes**, each running its own process independently. Think of it as "tabs on steroids" for your terminal.
+
+```
++-------------------------------+
+|  Pane 1       |  Pane 2       |
+|  Claude Code  |  Codex        |
+|  writing code |  reviewing    |
+|               |               |
++---------------+---------------+
+|  Pane 3       |  Pane 4       |
+|  Gemini CLI   |  tail -f logs |
+|  researching  |  monitoring   |
++-------------------------------+
+```
+
+Each pane is a full terminal. You can have Claude Code running in one, Codex in another, Gemini in a third -- all visible at the same time, all on the same machine.
+
+**The problem:** these panes can't talk to each other. An agent in Pane 1 has no idea what's happening in Pane 2.
+
+**tmux-bridge fixes this.** It gives every agent the ability to read, type, and send messages into any other pane.
+
+## What can you do with tmux-bridge?
+
+Once installed, your AI agents can:
+
+| Action | How | Example |
+|--------|-----|---------|
+| **See what another agent is doing** | `tmux_read` | Read the last 20 lines of Codex's pane |
+| **Send a task to another agent** | `tmux_message` + `tmux_keys` | Tell Claude to review a file |
+| **Coordinate multi-agent workflows** | Chain tool calls | Gemini researches -> Claude implements -> Codex reviews |
+| **Monitor processes** | `tmux_read` on a shell pane | Watch build logs, test output, server status |
+| **Label panes by role** | `tmux_name` | Name panes "claude", "codex", "gemini" for easy targeting |
+
+All of this happens through standard MCP tool calls -- your agent doesn't need to learn any new syntax. If it supports MCP, it already knows how.
+
+## Supported Agents
+
+### Tested and documented
+
+| Agent | Connection | Status |
+|-------|------------|--------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Native MCP (stdio) | Supported |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Native MCP (stdio) | Supported |
+| [Codex CLI](https://github.com/openai/codex) | Native MCP (stdio) | Supported |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | Native MCP (`kimi mcp add`) | Supported |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) older | Legacy wrapper (`kimi-tmux`) | Supported |
+
+### Should work (any MCP-compatible agent)
+
+| Agent | Notes |
+|-------|-------|
+| [Cursor](https://cursor.sh) | Supports MCP servers in settings |
+| [Windsurf (Codeium)](https://codeium.com/windsurf) | MCP server support |
+| [Copilot CLI](https://githubnext.com/projects/copilot-cli) | If MCP-compatible |
+| [Aider](https://aider.chat) | Community MCP support |
+| [Continue.dev](https://continue.dev) | MCP server support |
+| [Cline](https://github.com/cline/cline) | VS Code extension with MCP |
+| [Roo Code](https://github.com/RooVetGit/Roo-Code) | Fork of Cline with MCP |
+| Any shell script or process | Read pane output with `tmux_read`, no MCP needed |
+
+tmux-bridge works with **any agent that supports MCP over stdio**. If your agent isn't listed, try adding the MCP config -- it will likely just work.
+
 ## Why
 
 When you run multiple AI agents in separate terminals, they work in isolation. You end up copy-pasting context between them, manually relaying questions and answers, or losing track of what each agent is doing.
