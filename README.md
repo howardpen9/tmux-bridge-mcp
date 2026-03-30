@@ -101,7 +101,32 @@ tmux-bridge solves this by giving every agent the ability to **read, type, and s
 
 If you already use tmux to run multiple agents side by side, tmux-bridge just makes them aware of each other.
 
+### 😩 Without tmux-bridge
+
+You're running Claude Code in one pane, Codex in another. Claude finishes writing a function and you want Codex to review it. Here's what actually happens:
+
+1. You read Claude's output. Scroll up. Copy the relevant part.
+2. Switch to Codex's pane. Paste it in. Type "review this code."
+3. Codex gives feedback. You copy that.
+4. Switch back to Claude. Paste Codex's feedback. "Fix these issues."
+5. Repeat for every round of review.
+
+**You are the message bus.** Every interaction flows through your clipboard. You're not writing code anymore -- you're routing context between agents. With 3+ agents running, this becomes unmanageable within minutes.
+
+### 🤔 Why not LangChain / CrewAI / A2A?
+
+| Approach | What it asks you to do | tmux-bridge difference |
+|----------|----------------------|----------------------|
+| **LangChain / CrewAI / AutoGen** | Rewrite your workflow inside their framework. Your agents must be Python objects in their orchestration layer. | You keep using Claude Code, Codex, Gemini CLI as-is. No framework, no SDK, no rewrite. |
+| **Google A2A Protocol** | Wait for agents to adopt a new protocol spec. Designed for distributed, networked agents. | Works today with any MCP agent. No protocol adoption needed. |
+| **Custom WebSocket / HTTP glue** | Build and maintain your own IPC layer. Handle serialization, discovery, error handling. | Zero infrastructure. tmux is the transport -- it's already running. |
+| **Shared files / pipes** | Roll your own convention. Each agent needs custom tooling to read/write. | Standard MCP tools. Any agent that speaks MCP gets cross-pane superpowers instantly. |
+
+**The key insight:** you don't need a multi-agent *framework*. You need your existing agents to *see each other*. tmux-bridge adds exactly that -- a thin MCP layer over tmux -- and nothing more.
+
 ## 🚀 Quick Start
+
+**Prerequisites:** tmux 3.2+ and Node.js 18+ must be installed.
 
 **One command to configure all your agents:**
 
@@ -110,6 +135,14 @@ npx tmux-bridge-mcp setup
 ```
 
 This auto-detects Claude Code, Gemini CLI, Codex, and Kimi CLI on your machine, then writes the correct MCP config for each one. Done in seconds.
+
+**Verify it works:**
+
+```bash
+npx tmux-bridge-mcp --help
+```
+
+You should see the version and available commands. Restart your AI agent to activate the new tools.
 
 **See it in action:**
 
@@ -246,6 +279,13 @@ Add to your MCP config following the Codex MCP setup docs:
 
 ### Kimi CLI
 
+```bash
+# Check your Kimi version
+kimi --version
+# v1.26+ → use native MCP (recommended)
+# older  → use kimi-tmux wrapper
+```
+
 **Native MCP (recommended, v1.26+):**
 
 ```bash
@@ -326,6 +366,17 @@ kimi-tmux "ask gemini to summarize the test results in claude's pane"
 |----------|-------------|---------|
 | `TMUX_BRIDGE_SOCKET` | Override tmux server socket path | Auto-detected from `$TMUX` |
 | `KIMI_PATH` | Path to `kimi` binary (kimi-tmux only) | `kimi` (in PATH) |
+
+## 🔒 Security Model
+
+tmux-bridge is designed for **local development on a single machine**. It assumes all connected MCP agents are trusted:
+
+- Any agent can read from or write to **any pane** in the tmux server — there is no per-pane access control.
+- The **read guard** (must `tmux_read` before `tmux_type`/`tmux_keys`) is a sequencing aid to prevent blind typing. It is **not a security boundary**.
+- Pane labels set via `tmux_name` are **not authenticated** — any agent can label or relabel any pane.
+- There is no encryption or authentication between agents. Communication happens through tmux's own IPC (Unix socket).
+
+**Do not use tmux-bridge in multi-tenant environments** or expose the tmux socket over a network. It is built for the common case: one developer running multiple AI agents side by side on their own machine.
 
 ## 📝 System Instruction
 
