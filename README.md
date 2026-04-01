@@ -407,6 +407,33 @@ For agents that support custom system prompts, use `system-instruction/smux-skil
 
 👉 **When to use tmux-bridge-mcp:** You want a drop-in MCP server that works with any MCP-compatible agent out of the box, without touching your tmux configuration.
 
+### tmux-bridge (`/tmb`) vs Claude Code Native (subagent + `/codex` + `/gemini`)
+
+| Dimension | tmux-bridge | Claude Code Native |
+|-----------|-------------|-------------------|
+| **Context isolation** | Each pane has its own full conversation context, persists across interactions | subagent spawns fresh each time, gone when it finishes |
+| **Persistence** | Pane stays alive, accumulates conversation history | Fire-and-forget, must re-provide context next time |
+| **Parallelism** | Truly independent processes, no interference | Agent tool can parallelize, but shares billing/rate limits |
+| **Model diversity** | Each pane can run a different CLI (Codex, Gemini, Kimi) | `/codex` `/gemini` can do this too -- not a real differentiator |
+| **Communication overhead** | Goes through tmux read/send, has latency, messages may get truncated | Native tool calls, structured returns, high reliability |
+| **Result integration** | You must read pane output, parse, and synthesize manually | subagent returns structured results directly, ready to use |
+| **Operational complexity** | Extra layer of tmux management (labels, pane IDs) | One tool call, done |
+| **Cost** | Each pane consumes its own token budget independently | subagent shares the same session's token pool |
+
+**Verdict**
+
+tmux-bridge's real advantage comes down to one thing: **persistent context**. If you need an agent that remembers the last 30 turns of conversation and keeps following up on the same task, a tmux pane can do that -- a subagent cannot.
+
+But for most tasks, native is better:
+- Communication is more reliable (no tmux buffer truncation)
+- Results are structured -- no need to parse terminal output
+- Simpler to operate, one less layer of abstraction
+
+**Practical guidance:**
+- **Short-lived, one-off tasks** → native subagent / `/codex` / `/gemini`
+- **Long-running sessions that need accumulated context** (e.g., a reviewer continuously following the same PR) → tmux-bridge adds real value
+- A multi-pane multi-role layout only pays off if each role genuinely needs cross-conversation state -- otherwise the overhead outweighs the benefit
+
 ## 📄 License
 
 MIT

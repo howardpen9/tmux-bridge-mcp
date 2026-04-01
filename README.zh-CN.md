@@ -367,6 +367,33 @@ tmux-bridge 专为**单机本地开发**设计，假设所有连接的 MCP agent
 
 👉 **什麼時候用 tmux-bridge-mcp：** 你想要一個即插即用的 MCP 伺服器，任何 MCP 相容的 agent 都能開箱即用，不碰你的 tmux 設定。
 
+### tmux-bridge（`/tmb`）vs Claude Code 原生（subagent + `/codex` + `/gemini`）
+
+| 面向 | tmux-bridge | Claude Code 原生 |
+|------|-------------|-----------------|
+| **上下文隔离** | 每个 pane 有自己的完整 conversation context，持久存在 | subagent 每次 spawn 是全新的，结束即消失 |
+| **持久性** | pane 一直活着，可以累积对话历史 | 用完即弃，下次要重新给 context |
+| **并行能力** | 真正独立的 process，互不影响 | Agent tool 可并行，但共享同一个 billing/rate limit |
+| **模型多样性** | 每个 pane 可以跑不同 CLI（Codex、Gemini、Kimi） | `/codex` `/gemini` 也能做到，差异不大 |
+| **通信开销** | 要透过 tmux read/send，有延迟，讯息可能截断 | 原生 tool call，结构化回传，可靠度高 |
+| **结果整合** | 你要自己读 pane output、解析、整合 | subagent 直接回传结构化结果，可以直接用 |
+| **操作复杂度** | 多一层 tmux 管理（label、pane ID） | 一个 tool call 搞定 |
+| **成本** | 每个 pane 各自消耗 token | subagent 共享同一 session 的 token pool |
+
+**结论**
+
+tmux-bridge 的真正优势只有一个：**持久 context**。如果你需要一个 agent 记住前面 30 轮对话，持续跟进同一件事，tmux pane 做得到，subagent 做不到。
+
+但对大多数任务，原生方式更好：
+- 通信更可靠（不会有 tmux buffer 截断问题）
+- 结果结构化，不需要去 parse terminal output
+- 操作更简单，少一层抽象
+
+**实际建议：**
+- **短期、一次性任务** → 原生 subagent / `/codex` / `/gemini`
+- **需要长期 session、累积 context 的角色**（如持续 review 同一个 PR 的 reviewer）→ tmux-bridge 有价值
+- 多 pane 多角色布局，除非每个角色真的需要跨多次对话记住状态，否则 overhead 大于收益
+
 ## 📄 许可证
 
 MIT
