@@ -1,6 +1,6 @@
 {
   "name": "tmux-bridge-mcp",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Standalone MCP server + CLI adapters for cross-pane AI agent communication via tmux",
   "type": "module",
   "main": "dist/index.js",

@@ -6,7 +6,7 @@ import * as bridge from "./tmux-bridge.js";
 
 const server = new McpServer({
   name: "tmux-bridge",
-  version: "0.1.0",
+  version: "0.3.1",
 });
 
 export function err(e: unknown): { content: Array<{ type: "text"; text: string }>; isError: true } {
