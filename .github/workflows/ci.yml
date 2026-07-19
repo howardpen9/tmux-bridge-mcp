@@ -10,4 +10,6 @@ jobs:
           node-version: '22'
       - run: npm ci
       - run: npm run lint
+      # cli tests spawn dist/cli.js — must compile before npm test
+      - run: npm run build
       - run: npm test
