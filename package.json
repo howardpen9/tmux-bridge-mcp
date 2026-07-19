@@ -1,7 +1,7 @@
 {
   "name": "tmux-bridge-mcp",
   "version": "0.3.0",
-  "description": "Standalone MCP server + CLI adapters for cross-pane AI agent communication via tmux",
+  "description": "Standalone MCP server + CLI adapters for cross-pane AI agent communication via tmux (Claude, Codex, OpenCode, CodeBuddy, Copilot, Grok, Gemini, Kimi)",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -18,12 +18,18 @@
     "prepublishOnly": "npm run build"
   },
   "keywords": [
-    "mcp",
-    "tmux",
-    "gemini",
-    "kimi",
     "agent",
-    "bridge"
+    "bridge",
+    "claude",
+    "codebuddy",
+    "codex",
+    "copilot",
+    "gemini",
+    "grok",
+    "kimi",
+    "mcp",
+    "opencode",
+    "tmux"
   ],
   "license": "MIT",
   "repository": {

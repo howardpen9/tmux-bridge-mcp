@@ -55,13 +55,17 @@ All of this happens through standard MCP tool calls -- your agent doesn't need t
 
 ### Tested and documented
 
-| Agent | Connection | Status |
-|-------|------------|--------|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Native MCP (stdio) | Supported |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Native MCP (stdio) | Supported |
-| [Codex CLI](https://github.com/openai/codex) | Native MCP (stdio) | Supported |
-| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | Native MCP (`kimi mcp add`) | Supported |
-| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) older | Legacy wrapper (`kimi-tmux`) | Supported |
+| Agent | Connection | Setup path |
+|-------|------------|------------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | Native MCP (stdio) | `claude mcp add -s user` / `~/.claude.json` |
+| [Codex CLI](https://github.com/openai/codex) | Native MCP (stdio) | `codex mcp add` |
+| [OpenCode](https://opencode.ai) | Native MCP (stdio) | `~/.config/opencode/opencode.json(c)` (`mcp` key) |
+| [CodeBuddy](https://www.codebuddy.ai) | Native MCP (stdio) | `codebuddy mcp add -s user` / `~/.codebuddy/.mcp.json` |
+| [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli) | Native MCP (stdio) | `copilot mcp add` / `~/.copilot/mcp-config.json` |
+| [Grok Build](https://docs.x.ai/build/overview) | Native MCP (stdio) | `grok mcp add -s user` / `~/.grok/config.toml` |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | Native MCP (stdio) | `~/.gemini/settings.json` |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | Native MCP (`kimi mcp add`) | `kimi mcp add` |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) older | Legacy wrapper (`kimi-tmux`) | wrapper binary |
 
 ### Should work (any MCP-compatible agent)
 
@@ -69,7 +73,6 @@ All of this happens through standard MCP tool calls -- your agent doesn't need t
 |-------|-------|
 | [Cursor](https://cursor.sh) | Supports MCP servers in settings |
 | [Windsurf (Codeium)](https://codeium.com/windsurf) | MCP server support |
-| [Copilot CLI](https://githubnext.com/projects/copilot-cli) | If MCP-compatible |
 | [Aider](https://aider.chat) | Community MCP support |
 | [Continue.dev](https://continue.dev) | MCP server support |
 | [Cline](https://github.com/cline/cline) | VS Code extension with MCP |
@@ -97,7 +100,7 @@ tmux-bridge solves this by giving every agent the ability to **read, type, and s
 |-------------|-----|
 | **tmux** | The terminal multiplexer that hosts your panes -- this is the communication channel |
 | **Node.js 18+** | Runs the MCP server |
-| **At least one MCP-compatible agent** | Claude Code, Gemini CLI, Codex, or Kimi CLI v1.26+ |
+| **At least one MCP-compatible agent** | Claude Code, Codex, OpenCode, CodeBuddy, Copilot CLI, Grok Build, Gemini CLI, or Kimi CLI v1.26+ |
 
 If you already use tmux to run multiple agents side by side, tmux-bridge just makes them aware of each other.
 
@@ -134,7 +137,7 @@ You're running Claude Code in one pane, Codex in another. Claude finishes writin
 npx tmux-bridge-mcp setup
 ```
 
-This auto-detects Claude Code, Gemini CLI, Codex, and Kimi CLI on your machine, then writes the correct MCP config for each one. Done in seconds.
+This auto-detects Claude Code, Codex, OpenCode, CodeBuddy, Copilot CLI, Grok Build, Gemini CLI, and Kimi CLI on your machine, then writes the correct MCP config for each one. Done in seconds.
 
 **Verify it works:**
 
@@ -275,6 +278,70 @@ Add to your MCP config following the Codex MCP setup docs:
     }
   }
 }
+```
+
+### OpenCode
+
+`opencode mcp add` is interactive. `tmux-bridge-mcp setup` writes directly to
+`~/.config/opencode/opencode.json` (or `.jsonc`):
+
+```json
+{
+  "mcp": {
+    "tmux-bridge": {
+      "type": "local",
+      "command": ["npx", "-y", "tmux-bridge-mcp"],
+      "enabled": true
+    }
+  }
+}
+```
+
+### CodeBuddy (Tencent)
+
+```bash
+codebuddy mcp add -s user tmux-bridge -- npx -y tmux-bridge-mcp
+```
+
+Fallback config path: `~/.codebuddy/.mcp.json` (standard `mcpServers` JSON).
+
+### GitHub Copilot CLI
+
+```bash
+copilot mcp add tmux-bridge -- npx -y tmux-bridge-mcp
+```
+
+Fallback config path: `~/.copilot/mcp-config.json`:
+
+```json
+{
+  "mcpServers": {
+    "tmux-bridge": {
+      "type": "local",
+      "command": "npx",
+      "args": ["-y", "tmux-bridge-mcp"],
+      "tools": ["*"]
+    }
+  }
+}
+```
+
+### Grok Build
+
+```bash
+grok mcp add -s user tmux-bridge -- npx -y tmux-bridge-mcp
+```
+
+Fallback TOML in `~/.grok/config.toml`:
+
+```toml
+[mcp_servers.tmux-bridge]
+command = "npx"
+args = [
+    "-y",
+    "tmux-bridge-mcp",
+]
+enabled = true
 ```
 
 ### Kimi CLI

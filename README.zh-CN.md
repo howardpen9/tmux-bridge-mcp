@@ -55,13 +55,17 @@
 
 ### 已测试并提供文档
 
-| Agent | 连接方式 | 状态 |
-|-------|----------|------|
-| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 原生 MCP (stdio) | 已支持 |
-| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 原生 MCP (stdio) | 已支持 |
-| [Codex CLI](https://github.com/openai/codex) | 原生 MCP (stdio) | 已支持 |
-| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | 原生 MCP (`kimi mcp add`) | 已支持 |
-| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 旧版 | Legacy 封装器 (`kimi-tmux`) | 已支持 |
+| Agent | 连接方式 | Setup 路径 |
+|-------|----------|------------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | 原生 MCP (stdio) | `claude mcp add -s user` / `~/.claude.json` |
+| [Codex CLI](https://github.com/openai/codex) | 原生 MCP (stdio) | `codex mcp add` |
+| [OpenCode](https://opencode.ai) | 原生 MCP (stdio) | `~/.config/opencode/opencode.json(c)`（`mcp` 键） |
+| [CodeBuddy](https://www.codebuddy.ai) | 原生 MCP (stdio) | `codebuddy mcp add -s user` / `~/.codebuddy/.mcp.json` |
+| [GitHub Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli) | 原生 MCP (stdio) | `copilot mcp add` / `~/.copilot/mcp-config.json` |
+| [Grok Build](https://docs.x.ai/build/overview) | 原生 MCP (stdio) | `grok mcp add -s user` / `~/.grok/config.toml` |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | 原生 MCP (stdio) | `~/.gemini/settings.json` |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) v1.26+ | 原生 MCP (`kimi mcp add`) | `kimi mcp add` |
+| [Kimi CLI](https://github.com/MoonshotAI/kimi-cli) 旧版 | Legacy 封装器 (`kimi-tmux`) | 封装器二进制 |
 
 ### 理论兼容（任何支持 MCP 的 agent）
 
@@ -69,7 +73,6 @@
 |-------|------|
 | [Cursor](https://cursor.sh) | 设置中支持 MCP 服务器 |
 | [Windsurf (Codeium)](https://codeium.com/windsurf) | 支持 MCP 服务器 |
-| [Copilot CLI](https://githubnext.com/projects/copilot-cli) | 如果兼容 MCP |
 | [Aider](https://aider.chat) | 社区 MCP 支持 |
 | [Continue.dev](https://continue.dev) | 支持 MCP 服务器 |
 | [Cline](https://github.com/cline/cline) | VS Code 扩展，支持 MCP |
@@ -97,7 +100,7 @@ tmux-bridge 解决这个问题：让每个 agent 都能通过标准 MCP 工具**
 |----------|--------|
 | **tmux** | 终端多路复用器，承载你的面板 -- 这就是通信通道 |
 | **Node.js 18+** | 运行 MCP 服务器 |
-| **至少一个 MCP 兼容的 agent** | Claude Code、Gemini CLI、Codex 或 Kimi CLI v1.26+ |
+| **至少一个 MCP 兼容的 agent** | Claude Code、Codex、OpenCode、CodeBuddy、Copilot CLI、Grok Build、Gemini CLI 或 Kimi CLI v1.26+ |
 
 如果你已经在用 tmux 并排运行多个 agent，tmux-bridge 只是让它们彼此感知到对方的存在。
 
@@ -111,7 +114,7 @@ tmux-bridge 解决这个问题：让每个 agent 都能通过标准 MCP 工具**
 npx tmux-bridge-mcp setup
 ```
 
-自动检测你机器上的 Claude Code、Gemini CLI、Codex 和 Kimi CLI，然后为每个写入正确的 MCP 配置。几秒完成。
+自动检测你机器上的 Claude Code、Codex、OpenCode、CodeBuddy、Copilot CLI、Grok Build、Gemini CLI 和 Kimi CLI，然后为每个写入正确的 MCP 配置。几秒完成。
 
 **验证是否正常：**
 
