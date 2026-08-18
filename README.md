@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/howardpen9-tmux-bridge-mcp-badge.png)](https://mseep.ai/app/howardpen9-tmux-bridge-mcp)
+
 # tmux-bridge-mcp
 
 **English** | [简体中文](README.zh-CN.md)
